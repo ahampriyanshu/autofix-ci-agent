@@ -207,15 +207,14 @@ class TestReActAgent:
         obs_text = observation.get("observation", "")
         assert len(obs_text) > 5, "observation should be meaningful text"
     
-    def test_react_methods_with_scenario(self, scenario_name, module_name, max_steps):
-        """
-        Comprehensive test for a scenario including:
-        1. JSON output validation for all ReAct methods
-        2. LLM judge evaluation of ReAct step quality
-        3. Efficiency (solving within max_steps)
-        4. Success (agent fixes the issue)
-        """
-        # Use orchestrator to create workspace (same as pipeline does)
+    
+    # Individual Scenario Tests
+    def test_scenario_01_syntax_error(self):
+        """Test Case 1: Fix syntax error (missing colon) - Complete validation"""
+        scenario_name = "seed_01_syntax"
+        max_steps = self.scenario_thresholds[scenario_name]
+        
+        # Use orchestrator to create workspace
         from src.orchestrator import create_error_workspace
         workspace_result = create_error_workspace(scenario_name)
         
@@ -227,8 +226,7 @@ class TestReActAgent:
         
         print(f"\n=== Testing {scenario_name}: {scenario_description} ===")
         
-        # Test individual ReAct methods with real scenario data
-        # Get initial CI status using the workspace that was just created
+        # Get initial CI status
         ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
         initial_observation = f"Initial CI status: {ci_result}"
         
@@ -244,40 +242,30 @@ class TestReActAgent:
         self.validate_reason_output(reasoning)
         print(f"✓ reason() returns valid JSON structure")
         
-        # Judge reasoning quality
         reasoning_eval = self.judge_react_step('reason', reasoning, judge_context)
-        # Use lower threshold for individual steps since LLM judge can be strict
         print(f"✓ reason() quality: {reasoning_eval['score']}/100 - {reasoning_eval['feedback'][:50]}...")
-        if reasoning_eval['score'] < 40:
-            print(f"⚠️  Low reasoning score: {reasoning_eval['feedback']}")
         
         # Test act() method - JSON validation + LLM judge
         action_result = self.agent.act(reasoning)
         self.validate_act_output(action_result)
         print(f"✓ act() returns valid JSON structure")
         
-        # Judge action quality
         action_context = judge_context.copy()
         action_context['reasoning'] = reasoning.get('reasoning', '')
         action_eval = self.judge_react_step('act', action_result, action_context)
         print(f"✓ act() quality: {action_eval['score']}/100 - {action_eval['feedback'][:50]}...")
-        if action_eval['score'] < 40:
-            print(f"⚠️  Low action score: {action_eval['feedback']}")
         
         # Test observe() method - JSON validation + LLM judge
         observation = self.agent.observe(action_result)
         self.validate_observe_output(observation)
         print(f"✓ observe() returns valid JSON structure")
         
-        # Judge observation quality
         obs_context = judge_context.copy()
         obs_context['action_result'] = action_result
         obs_eval = self.judge_react_step('observe', observation, obs_context)
         print(f"✓ observe() quality: {obs_eval['score']}/100 - {obs_eval['feedback'][:50]}...")
-        if obs_eval['score'] < 40:
-            print(f"⚠️  Low observation score: {obs_eval['feedback']}")
         
-        # Test full scenario execution with LLM judge evaluation
+        # Test full scenario execution with LLM judge
         judge_result = self.judge_scenario_execution(scenario_name, workspace_path, max_turns=max_steps)
         scenario_data = judge_result['scenario_data']
         full_evaluation = judge_result['judge_evaluation']
@@ -286,7 +274,7 @@ class TestReActAgent:
         assert scenario_data['final_result'] == "success", f"Agent should fix {scenario_description} but got '{scenario_data['final_result']}'"
         print(f"✓ Agent successfully fixed the issue")
         
-        # Validate LLM judge evaluation of full scenario
+        # Validate LLM judge evaluation
         self.assert_judge_quality(full_evaluation, min_score=50)
         print(f"✓ Full scenario quality: {full_evaluation['score']}/100 - {full_evaluation['feedback'][:50]}...")
         
@@ -294,120 +282,425 @@ class TestReActAgent:
         assert scenario_data['total_turns'] <= max_steps, f"Agent took {scenario_data['total_turns']} turns, expected <= {max_steps}"
         print(f"✓ Agent solved in {scenario_data['total_turns']}/{max_steps} steps")
         
-        return {
-            "scenario": scenario_name,
-            "description": scenario_description,
-            "result": scenario_data['final_result'],
-            "max_steps": max_steps,
-            "actual_steps": scenario_data['total_turns'],
-            "judge_scores": {
-                "reasoning": reasoning_eval['score'],
-                "action": action_eval['score'],
-                "observation": obs_eval['score'],
-                "full_scenario": full_evaluation['score']
-            }
-        }
-    
-    # Individual Scenario Tests
-    def test_scenario_01_syntax_error(self):
-        """Test Case 1: Fix syntax error (missing colon)"""
-        result = self.test_react_methods_with_scenario(
-            "seed_01_syntax", 
-            "scenarios.seed_01_syntax", 
-            self.scenario_thresholds["seed_01_syntax"]
-        )
-        assert result["result"] == "success"
+        print(f"✓ SCENARIO COMPLETE: {scenario_name} - All validations passed")
+        
+        # Clean up this test's workspace
+        try:
+            if Path(workspace_path).exists():
+                shutil.rmtree(workspace_path)
+        except (FileNotFoundError, OSError):
+            pass
     
     def test_scenario_02_import_error(self):
-        """Test Case 2: Fix missing import"""
-        result = self.test_react_methods_with_scenario(
-            "seed_02_import", 
-            "scenarios.seed_02_import", 
-            self.scenario_thresholds["seed_02_import"]
-        )
-        assert result["result"] == "success"
+        """Test Case 2: Fix missing import - Complete validation"""
+        scenario_name = "seed_02_import"
+        max_steps = self.scenario_thresholds[scenario_name]
+        
+        # Use orchestrator to create workspace
+        from src.orchestrator import create_error_workspace
+        workspace_result = create_error_workspace(scenario_name)
+        
+        assert workspace_result["status"] == "pass", f"Failed to create workspace: {workspace_result.get('error', 'Unknown error')}"
+        
+        workspace_path = workspace_result["data"]["workspace_path"]
+        error_info = workspace_result["data"]["error_info"]
+        scenario_description = error_info.get('description', 'Unknown error')
+        
+        print(f"\n=== Testing {scenario_name}: {scenario_description} ===")
+        
+        # Get initial CI status
+        ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
+        initial_observation = f"Initial CI status: {ci_result}"
+        
+        # Create context for LLM judge
+        judge_context = {
+            'scenario_name': scenario_name,
+            'scenario_description': scenario_description,
+            'observation': initial_observation
+        }
+        
+        # Test reason() method - JSON validation + LLM judge
+        reasoning = self.agent.reason(initial_observation)
+        self.validate_reason_output(reasoning)
+        print(f"✓ reason() returns valid JSON structure")
+        
+        reasoning_eval = self.judge_react_step('reason', reasoning, judge_context)
+        print(f"✓ reason() quality: {reasoning_eval['score']}/100 - {reasoning_eval['feedback'][:50]}...")
+        
+        # Test act() method - JSON validation + LLM judge
+        action_result = self.agent.act(reasoning)
+        self.validate_act_output(action_result)
+        print(f"✓ act() returns valid JSON structure")
+        
+        action_context = judge_context.copy()
+        action_context['reasoning'] = reasoning.get('reasoning', '')
+        action_eval = self.judge_react_step('act', action_result, action_context)
+        print(f"✓ act() quality: {action_eval['score']}/100 - {action_eval['feedback'][:50]}...")
+        
+        # Test observe() method - JSON validation + LLM judge
+        observation = self.agent.observe(action_result)
+        self.validate_observe_output(observation)
+        print(f"✓ observe() returns valid JSON structure")
+        
+        obs_context = judge_context.copy()
+        obs_context['action_result'] = action_result
+        obs_eval = self.judge_react_step('observe', observation, obs_context)
+        print(f"✓ observe() quality: {obs_eval['score']}/100 - {obs_eval['feedback'][:50]}...")
+        
+        # Test full scenario execution with LLM judge
+        judge_result = self.judge_scenario_execution(scenario_name, workspace_path, max_turns=max_steps)
+        scenario_data = judge_result['scenario_data']
+        full_evaluation = judge_result['judge_evaluation']
+        
+        # Validate success
+        assert scenario_data['final_result'] == "success", f"Agent should fix {scenario_description} but got '{scenario_data['final_result']}'"
+        print(f"✓ Agent successfully fixed the issue")
+        
+        # Validate LLM judge evaluation
+        self.assert_judge_quality(full_evaluation, min_score=50)
+        print(f"✓ Full scenario quality: {full_evaluation['score']}/100 - {full_evaluation['feedback'][:50]}...")
+        
+        # Efficiency check
+        assert scenario_data['total_turns'] <= max_steps, f"Agent took {scenario_data['total_turns']} turns, expected <= {max_steps}"
+        print(f"✓ Agent solved in {scenario_data['total_turns']}/{max_steps} steps")
+        
+        print(f"✓ SCENARIO COMPLETE: {scenario_name} - All validations passed")
+        
+        # Clean up this test's workspace
+        try:
+            if Path(workspace_path).exists():
+                shutil.rmtree(workspace_path)
+        except (FileNotFoundError, OSError):
+            pass
     
     def test_scenario_03_test_failure(self):
-        """Test Case 3: Fix wrong test assertion"""
-        result = self.test_react_methods_with_scenario(
-            "seed_03_test", 
-            "scenarios.seed_03_test", 
-            self.scenario_thresholds["seed_03_test"]
-        )
-        assert result["result"] == "success"
+        """Test Case 3: Fix wrong test assertion - Complete validation"""
+        scenario_name = "seed_03_test"
+        max_steps = self.scenario_thresholds[scenario_name]
+        
+        # Use orchestrator to create workspace
+        from src.orchestrator import create_error_workspace
+        workspace_result = create_error_workspace(scenario_name)
+        
+        assert workspace_result["status"] == "pass", f"Failed to create workspace: {workspace_result.get('error', 'Unknown error')}"
+        
+        workspace_path = workspace_result["data"]["workspace_path"]
+        error_info = workspace_result["data"]["error_info"]
+        scenario_description = error_info.get('description', 'Unknown error')
+        
+        print(f"\n=== Testing {scenario_name}: {scenario_description} ===")
+        
+        # Get initial CI status
+        ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
+        initial_observation = f"Initial CI status: {ci_result}"
+        
+        # Create context for LLM judge
+        judge_context = {
+            'scenario_name': scenario_name,
+            'scenario_description': scenario_description,
+            'observation': initial_observation
+        }
+        
+        # Test reason() method - JSON validation + LLM judge
+        reasoning = self.agent.reason(initial_observation)
+        self.validate_reason_output(reasoning)
+        print(f"✓ reason() returns valid JSON structure")
+        
+        reasoning_eval = self.judge_react_step('reason', reasoning, judge_context)
+        print(f"✓ reason() quality: {reasoning_eval['score']}/100 - {reasoning_eval['feedback'][:50]}...")
+        
+        # Test act() method - JSON validation + LLM judge
+        action_result = self.agent.act(reasoning)
+        self.validate_act_output(action_result)
+        print(f"✓ act() returns valid JSON structure")
+        
+        action_context = judge_context.copy()
+        action_context['reasoning'] = reasoning.get('reasoning', '')
+        action_eval = self.judge_react_step('act', action_result, action_context)
+        print(f"✓ act() quality: {action_eval['score']}/100 - {action_eval['feedback'][:50]}...")
+        
+        # Test observe() method - JSON validation + LLM judge
+        observation = self.agent.observe(action_result)
+        self.validate_observe_output(observation)
+        print(f"✓ observe() returns valid JSON structure")
+        
+        obs_context = judge_context.copy()
+        obs_context['action_result'] = action_result
+        obs_eval = self.judge_react_step('observe', observation, obs_context)
+        print(f"✓ observe() quality: {obs_eval['score']}/100 - {obs_eval['feedback'][:50]}...")
+        
+        # Test full scenario execution with LLM judge
+        judge_result = self.judge_scenario_execution(scenario_name, workspace_path, max_turns=max_steps)
+        scenario_data = judge_result['scenario_data']
+        full_evaluation = judge_result['judge_evaluation']
+        
+        # Validate success
+        assert scenario_data['final_result'] == "success", f"Agent should fix {scenario_description} but got '{scenario_data['final_result']}'"
+        print(f"✓ Agent successfully fixed the issue")
+        
+        # Validate LLM judge evaluation
+        self.assert_judge_quality(full_evaluation, min_score=50)
+        print(f"✓ Full scenario quality: {full_evaluation['score']}/100 - {full_evaluation['feedback'][:50]}...")
+        
+        # Efficiency check
+        assert scenario_data['total_turns'] <= max_steps, f"Agent took {scenario_data['total_turns']} turns, expected <= {max_steps}"
+        print(f"✓ Agent solved in {scenario_data['total_turns']}/{max_steps} steps")
+        
+        print(f"✓ SCENARIO COMPLETE: {scenario_name} - All validations passed")
+        
+        # Clean up this test's workspace
+        try:
+            if Path(workspace_path).exists():
+                shutil.rmtree(workspace_path)
+        except (FileNotFoundError, OSError):
+            pass
     
     def test_scenario_04_dependency_error(self):
-        """Test Case 4: Fix missing dependency"""
-        result = self.test_react_methods_with_scenario(
-            "seed_04_dependency", 
-            "scenarios.seed_04_dependency", 
-            self.scenario_thresholds["seed_04_dependency"]
-        )
-        assert result["result"] == "success"
+        """Test Case 4: Fix missing dependency - Complete validation"""
+        scenario_name = "seed_04_dependency"
+        max_steps = self.scenario_thresholds[scenario_name]
+        
+        # Use orchestrator to create workspace
+        from src.orchestrator import create_error_workspace
+        workspace_result = create_error_workspace(scenario_name)
+        
+        assert workspace_result["status"] == "pass", f"Failed to create workspace: {workspace_result.get('error', 'Unknown error')}"
+        
+        workspace_path = workspace_result["data"]["workspace_path"]
+        error_info = workspace_result["data"]["error_info"]
+        scenario_description = error_info.get('description', 'Unknown error')
+        
+        print(f"\n=== Testing {scenario_name}: {scenario_description} ===")
+        
+        # Get initial CI status
+        ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
+        initial_observation = f"Initial CI status: {ci_result}"
+        
+        # Create context for LLM judge
+        judge_context = {
+            'scenario_name': scenario_name,
+            'scenario_description': scenario_description,
+            'observation': initial_observation
+        }
+        
+        # Test reason() method - JSON validation + LLM judge
+        reasoning = self.agent.reason(initial_observation)
+        self.validate_reason_output(reasoning)
+        print(f"✓ reason() returns valid JSON structure")
+        
+        reasoning_eval = self.judge_react_step('reason', reasoning, judge_context)
+        print(f"✓ reason() quality: {reasoning_eval['score']}/100 - {reasoning_eval['feedback'][:50]}...")
+        
+        # Test act() method - JSON validation + LLM judge
+        action_result = self.agent.act(reasoning)
+        self.validate_act_output(action_result)
+        print(f"✓ act() returns valid JSON structure")
+        
+        action_context = judge_context.copy()
+        action_context['reasoning'] = reasoning.get('reasoning', '')
+        action_eval = self.judge_react_step('act', action_result, action_context)
+        print(f"✓ act() quality: {action_eval['score']}/100 - {action_eval['feedback'][:50]}...")
+        
+        # Test observe() method - JSON validation + LLM judge
+        observation = self.agent.observe(action_result)
+        self.validate_observe_output(observation)
+        print(f"✓ observe() returns valid JSON structure")
+        
+        obs_context = judge_context.copy()
+        obs_context['action_result'] = action_result
+        obs_eval = self.judge_react_step('observe', observation, obs_context)
+        print(f"✓ observe() quality: {obs_eval['score']}/100 - {obs_eval['feedback'][:50]}...")
+        
+        # Test full scenario execution with LLM judge
+        judge_result = self.judge_scenario_execution(scenario_name, workspace_path, max_turns=max_steps)
+        scenario_data = judge_result['scenario_data']
+        full_evaluation = judge_result['judge_evaluation']
+        
+        # Validate success
+        assert scenario_data['final_result'] == "success", f"Agent should fix {scenario_description} but got '{scenario_data['final_result']}'"
+        print(f"✓ Agent successfully fixed the issue")
+        
+        # Validate LLM judge evaluation
+        self.assert_judge_quality(full_evaluation, min_score=50)
+        print(f"✓ Full scenario quality: {full_evaluation['score']}/100 - {full_evaluation['feedback'][:50]}...")
+        
+        # Efficiency check
+        assert scenario_data['total_turns'] <= max_steps, f"Agent took {scenario_data['total_turns']} turns, expected <= {max_steps}"
+        print(f"✓ Agent solved in {scenario_data['total_turns']}/{max_steps} steps")
+        
+        print(f"✓ SCENARIO COMPLETE: {scenario_name} - All validations passed")
+        
+        # Clean up this test's workspace
+        try:
+            if Path(workspace_path).exists():
+                shutil.rmtree(workspace_path)
+        except (FileNotFoundError, OSError):
+            pass
     
     def test_scenario_05_yaml_config_error(self):
-        """Test Case 5: Fix YAML config syntax error"""
-        result = self.test_react_methods_with_scenario(
-            "seed_05_yaml", 
-            "scenarios.seed_05_yaml", 
-            self.scenario_thresholds["seed_05_yaml"]
-        )
-        assert result["result"] == "success"
+        """Test Case 5: Fix YAML config syntax error - Complete validation"""
+        scenario_name = "seed_05_yaml"
+        max_steps = self.scenario_thresholds[scenario_name]
+        
+        # Use orchestrator to create workspace
+        from src.orchestrator import create_error_workspace
+        workspace_result = create_error_workspace(scenario_name)
+        
+        assert workspace_result["status"] == "pass", f"Failed to create workspace: {workspace_result.get('error', 'Unknown error')}"
+        
+        workspace_path = workspace_result["data"]["workspace_path"]
+        error_info = workspace_result["data"]["error_info"]
+        scenario_description = error_info.get('description', 'Unknown error')
+        
+        print(f"\n=== Testing {scenario_name}: {scenario_description} ===")
+        
+        # Get initial CI status
+        ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
+        initial_observation = f"Initial CI status: {ci_result}"
+        
+        # Create context for LLM judge
+        judge_context = {
+            'scenario_name': scenario_name,
+            'scenario_description': scenario_description,
+            'observation': initial_observation
+        }
+        
+        # Test reason() method - JSON validation + LLM judge
+        reasoning = self.agent.reason(initial_observation)
+        self.validate_reason_output(reasoning)
+        print(f"✓ reason() returns valid JSON structure")
+        
+        reasoning_eval = self.judge_react_step('reason', reasoning, judge_context)
+        print(f"✓ reason() quality: {reasoning_eval['score']}/100 - {reasoning_eval['feedback'][:50]}...")
+        
+        # Test act() method - JSON validation + LLM judge
+        action_result = self.agent.act(reasoning)
+        self.validate_act_output(action_result)
+        print(f"✓ act() returns valid JSON structure")
+        
+        action_context = judge_context.copy()
+        action_context['reasoning'] = reasoning.get('reasoning', '')
+        action_eval = self.judge_react_step('act', action_result, action_context)
+        print(f"✓ act() quality: {action_eval['score']}/100 - {action_eval['feedback'][:50]}...")
+        
+        # Test observe() method - JSON validation + LLM judge
+        observation = self.agent.observe(action_result)
+        self.validate_observe_output(observation)
+        print(f"✓ observe() returns valid JSON structure")
+        
+        obs_context = judge_context.copy()
+        obs_context['action_result'] = action_result
+        obs_eval = self.judge_react_step('observe', observation, obs_context)
+        print(f"✓ observe() quality: {obs_eval['score']}/100 - {obs_eval['feedback'][:50]}...")
+        
+        # Test full scenario execution with LLM judge
+        judge_result = self.judge_scenario_execution(scenario_name, workspace_path, max_turns=max_steps)
+        scenario_data = judge_result['scenario_data']
+        full_evaluation = judge_result['judge_evaluation']
+        
+        # Validate success
+        assert scenario_data['final_result'] == "success", f"Agent should fix {scenario_description} but got '{scenario_data['final_result']}'"
+        print(f"✓ Agent successfully fixed the issue")
+        
+        # Validate LLM judge evaluation
+        self.assert_judge_quality(full_evaluation, min_score=50)
+        print(f"✓ Full scenario quality: {full_evaluation['score']}/100 - {full_evaluation['feedback'][:50]}...")
+        
+        # Efficiency check
+        assert scenario_data['total_turns'] <= max_steps, f"Agent took {scenario_data['total_turns']} turns, expected <= {max_steps}"
+        print(f"✓ Agent solved in {scenario_data['total_turns']}/{max_steps} steps")
+        
+        print(f"✓ SCENARIO COMPLETE: {scenario_name} - All validations passed")
+        
+        # Clean up this test's workspace
+        try:
+            if Path(workspace_path).exists():
+                shutil.rmtree(workspace_path)
+        except (FileNotFoundError, OSError):
+            pass
     
     def test_scenario_06_multi_step_chain(self):
-        """Test Case 6: Fix multiple related issues"""
-        result = self.test_react_methods_with_scenario(
-            "seed_06_multi", 
-            "scenarios.seed_06_multi", 
-            self.scenario_thresholds["seed_06_multi"]
-        )
-        assert result["result"] == "success"
+        """Test Case 6: Fix multiple related issues - Complete validation"""
+        scenario_name = "seed_06_multi"
+        max_steps = self.scenario_thresholds[scenario_name]
+        
+        # Use orchestrator to create workspace
+        from src.orchestrator import create_error_workspace
+        workspace_result = create_error_workspace(scenario_name)
+        
+        assert workspace_result["status"] == "pass", f"Failed to create workspace: {workspace_result.get('error', 'Unknown error')}"
+        
+        workspace_path = workspace_result["data"]["workspace_path"]
+        error_info = workspace_result["data"]["error_info"]
+        scenario_description = error_info.get('description', 'Unknown error')
+        
+        print(f"\n=== Testing {scenario_name}: {scenario_description} ===")
+        
+        # Get initial CI status
+        ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
+        initial_observation = f"Initial CI status: {ci_result}"
+        
+        # Create context for LLM judge
+        judge_context = {
+            'scenario_name': scenario_name,
+            'scenario_description': scenario_description,
+            'observation': initial_observation
+        }
+        
+        # Test reason() method - JSON validation + LLM judge
+        reasoning = self.agent.reason(initial_observation)
+        self.validate_reason_output(reasoning)
+        print(f"✓ reason() returns valid JSON structure")
+        
+        reasoning_eval = self.judge_react_step('reason', reasoning, judge_context)
+        print(f"✓ reason() quality: {reasoning_eval['score']}/100 - {reasoning_eval['feedback'][:50]}...")
+        
+        # Test act() method - JSON validation + LLM judge
+        action_result = self.agent.act(reasoning)
+        self.validate_act_output(action_result)
+        print(f"✓ act() returns valid JSON structure")
+        
+        action_context = judge_context.copy()
+        action_context['reasoning'] = reasoning.get('reasoning', '')
+        action_eval = self.judge_react_step('act', action_result, action_context)
+        print(f"✓ act() quality: {action_eval['score']}/100 - {action_eval['feedback'][:50]}...")
+        
+        # Test observe() method - JSON validation + LLM judge
+        observation = self.agent.observe(action_result)
+        self.validate_observe_output(observation)
+        print(f"✓ observe() returns valid JSON structure")
+        
+        obs_context = judge_context.copy()
+        obs_context['action_result'] = action_result
+        obs_eval = self.judge_react_step('observe', observation, obs_context)
+        print(f"✓ observe() quality: {obs_eval['score']}/100 - {obs_eval['feedback'][:50]}...")
+        
+        # Test full scenario execution with LLM judge
+        judge_result = self.judge_scenario_execution(scenario_name, workspace_path, max_turns=max_steps)
+        scenario_data = judge_result['scenario_data']
+        full_evaluation = judge_result['judge_evaluation']
+        
+        # Validate success
+        assert scenario_data['final_result'] == "success", f"Agent should fix {scenario_description} but got '{scenario_data['final_result']}'"
+        print(f"✓ Agent successfully fixed the issue")
+        
+        # Validate LLM judge evaluation
+        self.assert_judge_quality(full_evaluation, min_score=50)
+        print(f"✓ Full scenario quality: {full_evaluation['score']}/100 - {full_evaluation['feedback'][:50]}...")
+        
+        # Efficiency check
+        assert scenario_data['total_turns'] <= max_steps, f"Agent took {scenario_data['total_turns']} turns, expected <= {max_steps}"
+        print(f"✓ Agent solved in {scenario_data['total_turns']}/{max_steps} steps")
+        
+        print(f"✓ SCENARIO COMPLETE: {scenario_name} - All validations passed")
+        
+        # Clean up this test's workspace
+        try:
+            if Path(workspace_path).exists():
+                shutil.rmtree(workspace_path)
+        except (FileNotFoundError, OSError):
+            pass
     
-    # Comprehensive Tests
-    def test_all_scenarios_comprehensive(self):
-        """Test all scenarios for success and efficiency"""
-        scenarios = [
-            ("seed_01_syntax", "scenarios.seed_01_syntax"),
-            ("seed_02_import", "scenarios.seed_02_import"),
-            ("seed_03_test", "scenarios.seed_03_test"),
-            ("seed_04_dependency", "scenarios.seed_04_dependency"),
-            ("seed_05_yaml", "scenarios.seed_05_yaml"),
-            ("seed_06_multi", "scenarios.seed_06_multi")
-        ]
-        
-        results = []
-        for scenario_name, module_name in scenarios:
-            max_steps = self.scenario_thresholds[scenario_name]
-            result = self.test_react_methods_with_scenario(scenario_name, module_name, max_steps)
-            results.append(result)
-        
-        # Verify all scenarios passed
-        success_count = sum(1 for r in results if r["result"] == "success")
-        total_count = len(results)
-        
-        print(f"\n=== COMPREHENSIVE TEST RESULTS ===")
-        print(f"Scenarios passed: {success_count}/{total_count}")
-        
-        # Calculate average judge scores
-        avg_reasoning = sum(r["judge_scores"]["reasoning"] for r in results) / total_count
-        avg_action = sum(r["judge_scores"]["action"] for r in results) / total_count
-        avg_observation = sum(r["judge_scores"]["observation"] for r in results) / total_count
-        avg_full_scenario = sum(r["judge_scores"]["full_scenario"] for r in results) / total_count
-        
-        print(f"\n=== LLM JUDGE SCORES (Average) ===")
-        print(f"Reasoning Quality: {avg_reasoning:.1f}/100")
-        print(f"Action Quality: {avg_action:.1f}/100")
-        print(f"Observation Quality: {avg_observation:.1f}/100")
-        print(f"Full Scenario Quality: {avg_full_scenario:.1f}/100")
-        
-        print(f"\n=== DETAILED RESULTS ===")
-        for result in results:
-            status = "✓ PASS" if result["result"] == "success" else "✗ FAIL"
-            steps_info = f"{result['actual_steps']}/{result['max_steps']} steps"
-            judge_info = f"Judge: {result['judge_scores']['full_scenario']}/100"
-            print(f"{status} {result['scenario']}: {result['description']} ({steps_info}, {judge_info})")
-        
-        assert success_count == total_count, f"Expected all {total_count} scenarios to pass, but only {success_count} passed"
     
     # Core Functionality Tests - These tests should FAIL when methods are NOT implemented
     def test_reason_implemented(self):
@@ -432,39 +725,3 @@ class TestReActAgent:
             result = self.agent.observe(test_action_result)
         except NotImplementedError:
             pytest.fail("observe() method is not implemented - user must implement this method")
-
-    def test_react_workflow_json_compliance(self):
-        """Test ReAct workflow methods return proper JSON structure"""
-        # Use orchestrator to create workspace with a simple scenario
-        from src.orchestrator import create_error_workspace
-        workspace_result = create_error_workspace("seed_01_syntax")
-        
-        assert workspace_result["status"] == "pass", f"Failed to create workspace: {workspace_result.get('error', 'Unknown error')}"
-        
-        workspace_path = workspace_result["data"]["workspace_path"]
-        
-        # Get real CI output for testing
-        ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
-        observation_text = f"CI failed: {ci_result}"
-        
-        # Test reason method
-        reasoning = self.agent.reason(observation_text)
-        self.validate_reason_output(reasoning)
-        
-        # Test act method  
-        action_result = self.agent.act(reasoning)
-        self.validate_act_output(action_result)
-        
-        # Test observe method
-        observation = self.agent.observe(action_result)
-        self.validate_observe_output(observation)
-        
-        print("✓ All ReAct methods return valid JSON structures")
-    
-    def teardown_method(self):
-        """Cleanup test workspaces"""
-        # Clean up workspaces created by orchestrator
-        if Path("workspaces").exists():
-            shutil.rmtree("workspaces")
-        if Path("temp_baseline").exists():
-            shutil.rmtree("temp_baseline")

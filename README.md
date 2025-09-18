@@ -1,6 +1,7 @@
 # Problem Statement: AI-Powered CI AutoFix Agent (ReAct)
 
-Your CI pipeline breaks daily with syntax errors, import issues, test failures, and configuration problems. Instead of manually debugging and fixing each issue, build an AI agent that automatically diagnoses and fixes CI failures.
+When CI pipelines fail due to syntax errors, import issues, test failures, or configuration problems, manual debugging takes valuable developer time. 
+Build an intelligent agent that automatically detects, diagnoses, and resolves these issues to keep your pipeline running smoothly.
 
 ---
 
@@ -11,7 +12,7 @@ Build an AI agent using the ReAct (Reason-Act-Observe) pattern that:
 - Uses **Actions** to execute targeted fixes using specialized tools.
 - Uses **Observations** to interpret results and determine next steps.
 - Orchestrates multiple fix attempts until CI passes or max iterations reached.
-- Returns a structured JSON output with fix results.
+- Returns a structured JSON output.
 
 ---
 
@@ -33,27 +34,18 @@ Build an AI agent using the ReAct (Reason-Act-Observe) pattern that:
         - **analyze_file** - Read and analyze file content for errors
           - Input: filename (e.g., "calculator.py")
           - Output: File content with error analysis
-        - **analyze_test_failure** - Analyze specific test failure details
-          - Input: test_path (e.g., "tests/test_calculator.py")
-          - Output: Test failure analysis and suggested fixes
         - **fix_syntax_error** - Fix Python syntax errors
           - Input: "file:line:fix_type" (e.g., "calculator.py:3:add_colon")
           - Output: Fix result with updated file content
         - **add_import** - Add missing import statements
           - Input: "file:import_statement" (e.g., "calculator.py:import math")
           - Output: Updated file with new import
-        - **remove_unused_import** - Remove unused import statements
-          - Input: "file:import_statement" (e.g., "calculator.py:import os")
-          - Output: Updated file with import removed
         - **fix_test_assertion** - Fix incorrect test assertions
           - Input: "file:line:correct_value" (e.g., "tests/test_calc.py:21:5.0")
           - Output: Updated test with correct assertion
         - **add_dependency** - Add missing packages to requirements.txt
           - Input: package_name (e.g., "numpy==1.21.0")
           - Output: Updated requirements.txt
-        - **validate_config** - Check YAML/config file syntax
-          - Input: filename (e.g., "ci/ci_config.yml")
-          - Output: Validation results and error details
         - **fix_yaml_syntax** - Fix YAML syntax errors
           - Input: "file:line:fix_type" (e.g., "ci_config.yml:5:fix_indentation")
           - Output: Fixed YAML file
@@ -78,7 +70,6 @@ The agent handles various CI failure types:
 
 ### 2) Import Issues
 - Missing import statements
-- Unused imports causing linting failures
 - Incorrect module names
 
 ### 3) Test Failures

@@ -1,19 +1,3 @@
-def validate_config(filename):
-    """Validate YAML/config file"""
-    try:
-        with open(filename, 'r') as f:
-            content = f.read()
-        
-        lines = content.split('\n')
-        for i, line in enumerate(lines, 1):
-            if line.strip() and not line.startswith('#'):
-                if 'name lint' in line and ':' not in line:
-                    return {"action": "validate_config", "status": "fail", "error": f"Line {i}: Missing colon after 'name lint'"}
-                    
-        return {"action": "validate_config", "status": "pass"}
-    except Exception as e:
-        return {"action": "validate_config", "status": "fail", "error": f"Error validating config: {e}"}
-
 def fix_yaml_syntax(params):
     """Fix YAML syntax: file:line:fix_type"""
     try:

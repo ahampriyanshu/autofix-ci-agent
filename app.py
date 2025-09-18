@@ -58,7 +58,7 @@ class RealTimeCapture:
 def main():
     st.title("Autofix CI Agent")
     
-    # Custom CSS for green run button
+    # Custom CSS for green run button and description styling
     st.markdown("""
     <style>
     .stButton > button {
@@ -67,24 +67,64 @@ def main():
         border: none;
         border-radius: 5px;
         font-weight: bold;
+        width: 120px;
+        height: 35px;
+        padding: 0;
+        margin-top: 25px;
     }
     .stButton > button:hover {
         background-color: #218838;
         color: white;
     }
+    .agent-description {
+        color: #888888;
+        font-size: 16px;
+        margin-bottom: 40px;
+    }
+    .scenario-description {
+        color: #666666;
+        font-style: italic;
+        font-size: 14px;
+        margin-top: 8px;
+        line-height: 1.4;
+    }
     </style>
     """, unsafe_allow_html=True)
     
     st.markdown("""
-    **An intelligent CI/CD pipeline autofix agent that automatically detects and resolves common issues in your codebase.**
-    """)
+    <div class="agent-description">
+    An intelligent CI/CD pipeline autofix agent that automatically detects and resolves common issues in your codebase.
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Get available seed scenarios
-    scenarios_dir = Path("scenarios")
+    # Get available seed scenarios using absolute path
+    app_dir = Path(__file__).parent
+    scenarios_dir = app_dir / "scenarios"
     seed_files = list(scenarios_dir.glob("seed_*.py"))
     
-    # Extract scenario names (without .py extension)
-    scenario_options = [f.stem for f in sorted(seed_files)]
+    # Create mapping of scenario files to display names
+    scenario_display_names = {
+        "seed_01_syntax": "Syntax Error - Missing Colon",
+        "seed_02_import": "Import Error - Missing Module",
+        "seed_03_test": "Test Failure - Wrong Assertion",
+        "seed_04_dependency": "Missing Dependency - Numpy",
+        "seed_05_yaml": "YAML Config Error - Missing Colon",
+        "seed_06_multi": "Multi-Step Chain - Multiple Issues"
+    }
+    
+    # Create mapping of scenario files to descriptions
+    scenario_descriptions = {
+        "seed_01_syntax": "Tests the agent's ability to detect and fix Python syntax errors, specifically missing colons in function definitions.",
+        "seed_02_import": "Evaluates how the agent handles missing import statements when modules are used but not imported.",
+        "seed_03_test": "Checks if the agent can identify and correct failing test assertions with wrong expected values.",
+        "seed_04_dependency": "Tests the agent's capability to detect missing dependencies and add them to requirements.txt.",
+        "seed_05_yaml": "Assesses the agent's ability to fix YAML configuration syntax errors like missing colons.",
+        "seed_06_multi": "Comprehensive test with multiple related issues that need to be resolved in sequence."
+    }
+    
+    # Extract scenario names and create display options
+    scenario_files = [f.stem for f in sorted(seed_files)]
+    scenario_options = [scenario_display_names.get(f, f) for f in scenario_files]
     
     if not scenario_options:
         st.error("No seed scenarios found in the scenarios directory!")
@@ -94,46 +134,34 @@ def main():
     col1, col2 = st.columns([3, 1])
     
     with col1:
-        selected_scenario = st.selectbox(
+        selected_display_name = st.selectbox(
             "Select a seed scenario:",
             scenario_options,
             help="Choose which scenario to run the CI autofix agent on"
         )
+        
+        # Map back from display name to file name
+        selected_scenario = None
+        for file_name, display_name in scenario_display_names.items():
+            if display_name == selected_display_name:
+                selected_scenario = file_name
+                break
+        # Fallback if not found in mapping
+        if selected_scenario is None:
+            selected_scenario = selected_display_name
     
     with col2:
-        st.write("")  # Add some spacing
-        st.write("")  # Add some spacing
         run_button = st.button("Run", type="primary")
     
     # Display scenario description if available
-    if selected_scenario:
-        scenario_path = scenarios_dir / f"{selected_scenario}.py"
-        try:
-            with open(scenario_path, 'r') as f:
-                content = f.read()
-                # Try to extract docstring or comments for description
-                lines = content.split('\n')
-                description_lines = []
-                for line in lines[:10]:  # Check first 10 lines
-                    if line.strip().startswith('"""') or line.strip().startswith("'''"):
-                        # Found docstring start
-                        if line.count('"""') == 2 or line.count("'''") == 2:
-                            # Single line docstring
-                            description_lines.append(line.strip().strip('"""').strip("'''").strip())
-                            break
-                    elif line.strip().startswith('#'):
-                        # Comment line
-                        description_lines.append(line.strip().lstrip('#').strip())
-                
-                if description_lines:
-                    st.info(f"**Scenario Description:** {' '.join(description_lines[:3])}")
-        except Exception:
-            pass  # Ignore errors reading scenario files
-    
+    if selected_scenario and selected_scenario in scenario_descriptions:
+        description = scenario_descriptions[selected_scenario]
+        st.markdown(f'<div class="scenario-description">{description}</div>', unsafe_allow_html=True)
+
     # Run the agent when button is clicked
     if run_button and selected_scenario:
         st.write("---")
-        st.subheader(f"🚀 Running {selected_scenario}...")
+        st.subheader(f"Running {selected_display_name}...")
         
         # Create real-time output display
         status_text = st.empty()

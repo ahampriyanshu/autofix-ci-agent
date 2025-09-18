@@ -14,17 +14,3 @@ def analyze_file(filename):
     except Exception as e:
         return {"action": "analyze_file", "status": "fail", "error": f"Error reading {filename}: {e}"}
 
-def analyze_test_failure(test_path):
-    """Analyze specific test failure"""
-    try:
-        result = subprocess.run(
-            ["python", "-m", "pytest", test_path, "-v"],
-            capture_output=True, text=True
-        )
-        output = result.stdout + result.stderr
-        if result.returncode == 0:
-            return {"action": "analyze_test_failure", "status": "pass", "data": {"output": output}}
-        else:
-            return {"action": "analyze_test_failure", "status": "fail", "error": output}
-    except Exception as e:
-        return {"action": "analyze_test_failure", "status": "fail", "error": f"Error analyzing test: {e}"}

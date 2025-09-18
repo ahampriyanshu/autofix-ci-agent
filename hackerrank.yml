@@ -1,8 +1,8 @@
 version: 1
 configuration:
-  has_webserver: false
+  has_webserver: true
   scoring:
-    command: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 5
+    command: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 9
     files:
       - unit.xml
   ide_config:
@@ -12,7 +12,7 @@ configuration:
     project_menu:
       install: bash setup/install.sh
       run: python3 -m streamlit run app.py --server.port 8000
-      test: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 5
+      test: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 9
   readonly_paths:
     - hackerrank.yml
     - requirements.txt

@@ -57,7 +57,12 @@ def create_error_workspace(seed_name):
         workspaces_dir.mkdir(exist_ok=True)
         
         from create_baseline import create_baseline
-        temp_baseline = create_baseline("temp_baseline")
+        import threading
+        
+        # Create unique temp directory per worker/thread to avoid parallel conflicts
+        worker_id = getattr(threading.current_thread(), 'name', 'main')
+        temp_dir_name = f"temp_baseline_{worker_id}_{os.getpid()}_{seed_name}"
+        temp_baseline = create_baseline(temp_dir_name)
         
         workspace_path = workspaces_dir / f"test_{seed_name}"
         if workspace_path.exists():
@@ -88,7 +93,7 @@ def run_ci_agent(workspace_path):
     try:
         llm = get_llm()
         agent = ReActAgent(known_actions, llm)
-        result = run_react_loop(agent, str(workspace_path), max_turns=20)
+        result = run_react_loop(agent, str(workspace_path), max_turns=10)
         
         return {
             "status": "pass" if result == "success" else "fail",
