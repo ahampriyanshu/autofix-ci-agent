@@ -58,6 +58,23 @@ class RealTimeCapture:
 def main():
     st.title("Autofix CI Agent")
     
+    # Custom CSS for green run button
+    st.markdown("""
+    <style>
+    .stButton > button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .stButton > button:hover {
+        background-color: #218838;
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.markdown("""
     **An intelligent CI/CD pipeline autofix agent that automatically detects and resolves common issues in your codebase.**
     """)

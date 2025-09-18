@@ -11,7 +11,7 @@ configuration:
       - src/prompts/ci_agent_prompt.txt
     project_menu:
       install: bash setup/install.sh
-      run: bash setup/install.sh && python3 -m pytest tests/ -v --junit-xml=unit.xml -n auto
+      run: python3 -m streamlit run app.py --server.port 8000
       test: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 5
   readonly_paths:
     - hackerrank.yml
