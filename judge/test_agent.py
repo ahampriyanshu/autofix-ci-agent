@@ -410,6 +410,24 @@ class TestReActAgent:
         assert success_count == total_count, f"Expected all {total_count} scenarios to pass, but only {success_count} passed"
     
     # Core Functionality Tests
+    def test_not_implemented_errors(self):
+        """Test that all ReAct methods raise NotImplementedError when not implemented"""
+        # Test reason() method raises NotImplementedError
+        with pytest.raises(NotImplementedError, match="User must implement the reason\\(\\) method"):
+            self.agent.reason("Test observation")
+        
+        # Test act() method raises NotImplementedError
+        test_reasoning = {"reasoning": "test", "tool_call": {"tool": "test_tool", "input": "test_input"}}
+        with pytest.raises(NotImplementedError, match="User must implement the act\\(\\) method"):
+            self.agent.act(test_reasoning)
+        
+        # Test observe() method raises NotImplementedError
+        test_action_result = {"status": "success", "action": "test_action", "result": {}}
+        with pytest.raises(NotImplementedError, match="User must implement the observe\\(\\) method"):
+            self.agent.observe(test_action_result)
+        
+        print("✓ All ReAct methods correctly raise NotImplementedError")
+
     def test_react_workflow_json_compliance(self):
         """Test ReAct workflow methods return proper JSON structure"""
         # Use orchestrator to create workspace with a simple scenario
