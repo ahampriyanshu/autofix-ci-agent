@@ -178,11 +178,51 @@ def main():
         except queue.Empty:
             result_data = {"success": False, "error": "Pipeline execution timeout or error"}
         
-        # Update status
+        # Update status based on result
+        pipeline_failed = False
+        
         if result_data["success"]:
-            status_text.success("✅ Pipeline execution completed!")
+            pipeline_result = result_data.get("result", {})
+            
+            # Check if pipeline result indicates success or failure
+            if isinstance(pipeline_result, dict):
+                pipeline_status = pipeline_result.get("status", "unknown")
+                
+                if pipeline_status == "pass":
+                    status_text.success("✅ Pipeline execution completed successfully! All issues fixed.")
+                elif pipeline_status == "fail":
+                    pipeline_failed = True
+                    error_msg = pipeline_result.get("error", "CI pipeline failed")
+                    status_text.error(f"❌ Pipeline failed: {error_msg}")
+                    
+                    # Display additional error details if available
+                    if "data" in pipeline_result and pipeline_result["data"]:
+                        st.error("**Error Details:**")
+                        st.code(str(pipeline_result["data"]), language="text")
+                else:
+                    status_text.warning(f"⚠️ Pipeline completed with unknown status: {pipeline_status}")
+            else:
+                # Fallback for non-dict results
+                status_text.success("✅ Pipeline execution completed!")
         else:
-            status_text.error(f"❌ Pipeline execution failed: {result_data.get('error', 'Unknown error')}")
+            # Pipeline execution itself failed (exception occurred)
+            pipeline_failed = True
+            error_msg = result_data.get('error', 'Unknown error')
+            status_text.error(f"❌ Pipeline execution failed: {error_msg}")
+            
+            # Display the error in a more prominent way
+            st.error("**Execution Error:**")
+            st.code(error_msg, language="text")
+        
+        # If pipeline failed, hide the output and show expandable full output section
+        if pipeline_failed:
+            # Clear the output container
+            output_text.empty()
+            
+            # Add expandable section for full pipeline output
+            with st.expander("🔍 View Full Pipeline Output", expanded=False):
+                st.code('\n'.join(output_lines), language="text")
+        # If pipeline succeeded, keep the output visible as before
 
 
 if __name__ == "__main__":

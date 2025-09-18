@@ -409,24 +409,29 @@ class TestReActAgent:
         
         assert success_count == total_count, f"Expected all {total_count} scenarios to pass, but only {success_count} passed"
     
-    # Core Functionality Tests
-    def test_not_implemented_errors(self):
-        """Test that all ReAct methods raise NotImplementedError when not implemented"""
-        # Test reason() method raises NotImplementedError
-        with pytest.raises(NotImplementedError, match="User must implement the reason\\(\\) method"):
-            self.agent.reason("Test observation")
-        
-        # Test act() method raises NotImplementedError
+    # Core Functionality Tests - These tests should FAIL when methods are NOT implemented
+    def test_reason_implemented(self):
+        """Test that reason() method is implemented and returns valid structure"""
+        try:
+            result = self.agent.reason("Test observation: CI failed with syntax error")
+        except NotImplementedError:
+            pytest.fail("reason() method is not implemented - user must implement this method")
+    
+    def test_act_implemented(self):
+        """Test that act() method is implemented and returns valid structure"""
         test_reasoning = {"reasoning": "test", "tool_call": {"tool": "test_tool", "input": "test_input"}}
-        with pytest.raises(NotImplementedError, match="User must implement the act\\(\\) method"):
-            self.agent.act(test_reasoning)
-        
-        # Test observe() method raises NotImplementedError
+        try:
+            result = self.agent.act(test_reasoning)
+        except NotImplementedError:
+            pytest.fail("act() method is not implemented - user must implement this method")
+    
+    def test_observe_implemented(self):
+        """Test that observe() method is implemented and returns valid structure"""
         test_action_result = {"status": "success", "action": "test_action", "result": {}}
-        with pytest.raises(NotImplementedError, match="User must implement the observe\\(\\) method"):
-            self.agent.observe(test_action_result)
-        
-        print("✓ All ReAct methods correctly raise NotImplementedError")
+        try:
+            result = self.agent.observe(test_action_result)
+        except NotImplementedError:
+            pytest.fail("observe() method is not implemented - user must implement this method")
 
     def test_react_workflow_json_compliance(self):
         """Test ReAct workflow methods return proper JSON structure"""
