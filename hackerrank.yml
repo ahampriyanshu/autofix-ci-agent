@@ -1,0 +1,32 @@
+version: 1
+configuration:
+  has_webserver: false
+  scoring:
+    command: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 5
+    files:
+      - unit.xml
+  ide_config:
+    default_open_files:
+      - src/ci_agent.py
+      - src/prompts/ci_agent_prompt.txt
+    project_menu:
+      install: bash setup/install.sh
+      run: bash setup/install.sh && python3 -m pytest tests/ -v --junit-xml=unit.xml -n auto
+      test: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 5
+  readonly_paths:
+    - hackerrank.yml
+    - requirements.txt
+    - baseline/**
+    - src/tools/**
+    - scenarios/**
+    - setup/**
+    - scripts/**
+    - workspaces/**
+    - src/llm.py
+    - src/helpers.py
+    - src/orchestrator.py
+    - src/react_runner.py
+    - judge/**
+    - app.py
+    - pipeline.py
+    - pytest.ini
