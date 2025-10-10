@@ -217,26 +217,26 @@ def main():
                 pipeline_status = pipeline_result.get("status", "unknown")
                 
                 if pipeline_status == "pass":
-                    status_text.success("✅ Pipeline execution completed successfully! All issues fixed.")
+                    status_text.success("Pipeline execution completed successfully! All issues fixed.")
                 elif pipeline_status == "fail":
                     pipeline_failed = True
                     error_msg = pipeline_result.get("error", "CI pipeline failed")
-                    status_text.error(f"❌ Pipeline failed: {error_msg}")
+                    status_text.error(f"Pipeline failed: {error_msg}")
                     
                     # Display additional error details if available
                     if "data" in pipeline_result and pipeline_result["data"]:
                         st.error("**Error Details:**")
                         st.code(str(pipeline_result["data"]), language="text")
                 else:
-                    status_text.warning(f"⚠️ Pipeline completed with unknown status: {pipeline_status}")
+                    status_text.warning(f"Pipeline completed with unknown status: {pipeline_status}")
             else:
                 # Fallback for non-dict results
-                status_text.success("✅ Pipeline execution completed!")
+                status_text.success("Pipeline execution completed!")
         else:
             # Pipeline execution itself failed (exception occurred)
             pipeline_failed = True
             error_msg = result_data.get('error', 'Unknown error')
-            status_text.error(f"❌ Pipeline execution failed: {error_msg}")
+            status_text.error(f"Pipeline execution failed: {error_msg}")
             
             # Display the error in a more prominent way
             st.error("**Execution Error:**")

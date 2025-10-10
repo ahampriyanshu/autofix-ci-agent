@@ -1,8 +1,8 @@
 version: 1
 configuration:
-  has_webserver: true
+  has_webserver: false
   scoring:
-    command: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 9
+    command: bash scripts/test.sh
     files:
       - unit.xml
   ide_config:
@@ -10,16 +10,16 @@ configuration:
       - src/ci_agent.py
       - src/prompts/ci_agent_prompt.txt
     project_menu:
-      install: bash setup/install.sh
-      run: python3 -m streamlit run app.py --server.port 8000
-      test: bash setup/install.sh && python3 -m pytest judge/ --junit-xml=unit.xml -n 9
+      install: bash scripts/install.sh
+      run: bash scripts/run.sh
+      test: bash scripts/test.sh
   readonly_paths:
     - hackerrank.yml
     - requirements.txt
     - baseline/**
     - src/tools/**
     - scenarios/**
-    - setup/**
+    - scripts/create_baseline.py
     - scripts/**
     - workspaces/**
     - src/llm.py
@@ -30,3 +30,4 @@ configuration:
     - app.py
     - pipeline.py
     - pytest.ini
+    - PROJECT_FILES_INSTRUCTIONS.md

@@ -703,25 +703,25 @@ class TestReActAgent:
     
     
     # Core Functionality Tests - These tests should FAIL when methods are NOT implemented
-    def test_reason_implemented(self):
-        """Test that reason() method is implemented and returns valid structure"""
+    def test_reason_method_implemented(self):
+        """Test that reason method is implemented (user must implement this)"""
         try:
             result = self.agent.reason("Test observation: CI failed with syntax error")
         except NotImplementedError:
-            pytest.fail("reason() method is not implemented - user must implement this method")
+            pytest.fail("User must implement reason() method in src/ci_agent.py")
     
-    def test_act_implemented(self):
-        """Test that act() method is implemented and returns valid structure"""
+    def test_act_method_implemented(self):
+        """Test that act method is implemented (user must implement this)"""
         test_reasoning = {"reasoning": "test", "tool_call": {"tool": "test_tool", "input": "test_input"}}
         try:
             result = self.agent.act(test_reasoning)
         except NotImplementedError:
-            pytest.fail("act() method is not implemented - user must implement this method")
+            pytest.fail("User must implement act() method in src/ci_agent.py")
     
-    def test_observe_implemented(self):
-        """Test that observe() method is implemented and returns valid structure"""
+    def test_observe_method_implemented(self):
+        """Test that observe method is implemented (user must implement this)"""
         test_action_result = {"status": "success", "action": "test_action", "result": {}}
         try:
             result = self.agent.observe(test_action_result)
         except NotImplementedError:
-            pytest.fail("observe() method is not implemented - user must implement this method")
+            pytest.fail("User must implement observe() method in src/ci_agent.py")

@@ -1,0 +1,5 @@
+steps:
+  - name: test
+    run: pytest
+  - name lint  # Missing colon
+    run: flake8
