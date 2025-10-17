@@ -1,2 +1,2 @@
-# TODO: Implement CI Agent prompt
-# Add system prompt for CI agent to analyze and fix pipeline failures
+# TODO: Implement CI agent prompt
+# Should analyze CI pipeline failures and systematically fix them using ReAct pattern and output fix actions
