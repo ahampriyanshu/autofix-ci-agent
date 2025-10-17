@@ -1,6 +1,6 @@
 version: 1
 configuration:
-  has_webserver: false
+  has_webserver: true
   scoring:
     command: bash scripts/test.sh
     files:

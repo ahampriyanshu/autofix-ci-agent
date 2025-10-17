@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 
+load_dotenv()
+
+
 # Use content-based cache files that persist across test runs
 def _get_cache_file(input_hash: str) -> str:
     """Get cache file path based on input content hash for persistence across runs."""
@@ -22,22 +25,11 @@ def _get_input_hash(prompt: str, system_msg: str, model: str, max_tokens: int) -
     input_str = f"{system_msg}|{prompt}|{model}|{max_tokens}"
     return hashlib.sha256(input_str.encode()).hexdigest()[:16]
 
-
-def try_load_env() -> None:
-    here = os.path.dirname(__file__)
-    try:
-        load_dotenv(os.path.join(here, "..", ".env.local"))
-    except Exception:
-        pass
-
-
-try_load_env()
-
-
+    
 def get_openai_client() -> OpenAI:
     """Initialize and return OpenAI client with proper configuration."""
     api_key = os.getenv("OPENAI_API_KEY")
-    api_base = "https://api.openai.com/v1"
+    api_base = os.getenv("OPENAI_API_BASE")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY environment variable is required for LLM usage")
     return OpenAI(api_key=api_key, base_url=api_base)

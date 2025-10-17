@@ -153,3 +153,4 @@ Desktop.ini
 *.key
 *.pem
 secrets.json
+*.xml
