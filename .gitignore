@@ -154,3 +154,4 @@ Desktop.ini
 *.pem
 secrets.json
 *.xml
+workspaces/

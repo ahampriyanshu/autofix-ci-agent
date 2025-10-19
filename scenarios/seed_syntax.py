@@ -20,7 +20,7 @@ def induce_errors(workspace_path):
     calc_file.write_text(broken_content)
     
     return {
-        "seed": "01_syntax",
+        "seed": "syntax",
         "description": "Missing colon in function definition",
         "error_type": "SyntaxError",
         "file": "calculator.py",
