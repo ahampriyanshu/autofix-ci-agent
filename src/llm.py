@@ -12,11 +12,10 @@ from openai import OpenAI
 load_dotenv()
 
 
-# Use content-based cache files that persist across test runs
 def _get_cache_file(input_hash: str) -> str:
     """Get cache file path based on input content hash for persistence across runs."""
     cache_dir = os.path.join(os.getcwd(), ".pytest_cache")
-    # Use first 8 chars of hash to avoid super long filenames but still avoid collisions
+    os.makedirs(cache_dir, exist_ok=True)
     return os.path.join(cache_dir, f"cache_{input_hash[:8]}.json")
 
 

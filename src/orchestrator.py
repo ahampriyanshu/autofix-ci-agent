@@ -59,7 +59,7 @@ def orchestrate_ci_fix(seed_name):
 def create_error_workspace(seed_name):
     try:
         workspaces_dir = Path("workspaces")
-        workspaces_dir.mkdir(exist_ok=True)
+        workspaces_dir.mkdir(parents=True, exist_ok=True)
 
         from create_baseline import create_baseline
         import threading

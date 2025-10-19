@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 import os
 from .helpers import execute_tool_in_workspace
 
@@ -14,93 +13,12 @@ class ReActAgent:
         )
 
     def reason(self, observation):
-        try:
-            with open(self.prompt_path, "r", encoding="utf-8") as f:
-                system_prompt = f.read()
-
-            full_prompt = f"""{system_prompt}
-            CURRENT OBSERVATION: {observation}
-            """
-
-            response = self.llm.invoke(full_prompt)
-
-            try:
-                reasoning_data = json.loads(response.content.strip())
-                if (
-                    isinstance(reasoning_data, dict)
-                    and "reasoning" in reasoning_data
-                    and "tool_call" in reasoning_data
-                ):
-                    return reasoning_data
-                else:
-                    return {"error": "Invalid reasoning format from LLM"}
-            except json.JSONDecodeError:
-                return {
-                    "error": f"Failed to parse LLM response as JSON: {response.content[:100]}..."
-                }
-
-        except Exception as e:
-            return {"error": f"Reasoning failed: {str(e)}"}
+        """Analyze current CI state and plan next action using LLM"""
+        raise NotImplementedError("reason must be implemented by the user")
 
     def act(self, reasoning):
-        try:
-            if "error" in reasoning:
-                return {
-                    "status": "error",
-                    "error": reasoning["error"],
-                    "action": "none",
-                    "input": "",
-                }
-
-            tool_call = reasoning.get("tool_call", {})
-            tool_name = tool_call.get("tool", "")
-            tool_input = tool_call.get("input", "")
-
-            if not tool_name:
-                return {
-                    "status": "error",
-                    "error": "No tool specified in reasoning",
-                    "action": "none",
-                    "input": "",
-                }
-
-            workspace_path = self.workspace_path
-            if workspace_path:
-                workspace_path = str(Path(workspace_path).resolve())
-            else:
-                return {
-                    "status": "error",
-                    "error": "Workspace path not set",
-                    "action": tool_name,
-                    "input": tool_input,
-                }
-
-            if not os.path.exists(workspace_path):
-                return {
-                    "status": "error",
-                    "error": f"Workspace path does not exist: {workspace_path}",
-                    "action": tool_name,
-                    "input": tool_input,
-                }
-
-            result = execute_tool_in_workspace(workspace_path, tool_name, tool_input)
-
-            return {
-                "status": "success",
-                "action": tool_name,
-                "input": tool_input,
-                "result": result,
-            }
-
-        except Exception as e:
-            import traceback
-
-            return {
-                "status": "error",
-                "error": f"Action execution failed: {str(e)}\n{traceback.format_exc()}",
-                "action": tool_name if "tool_name" in locals() else "unknown",
-                "input": tool_input if "tool_input" in locals() else "",
-            }
+        """Execute tool calls with proper error handling"""
+        raise NotImplementedError("act must be implemented by the user")
 
     def observe(self, action_result):
         try:
