@@ -16,7 +16,9 @@ def format_rubric_header() -> str:
     )
 
 
-def build_prompt(task_name: str, rubric: str, input_data: Dict[str, Any], output_data: Dict[str, Any]) -> str:
+def build_prompt(
+    task_name: str, rubric: str, input_data: Dict[str, Any], output_data: Dict[str, Any]
+) -> str:
     """Build a standardized prompt for LLM judge evaluation."""
     header = format_rubric_header()
     return (
@@ -33,7 +35,7 @@ def invoke_judge(llm: Any, prompt: str) -> Dict[str, Any]:
     """Invoke the LLM judge with standardized response handling."""
     completion = llm.invoke(prompt)
     content = getattr(completion, "content", str(completion))
-    
+
     try:
         data = json.loads(content.strip())
     except json.JSONDecodeError:
@@ -42,9 +44,9 @@ def invoke_judge(llm: Any, prompt: str) -> Dict[str, Any]:
             "pass": False,
             "score": 0,
             "feedback": f"Failed to parse judge response: {content[:200]}...",
-            "reasons": ["JSON parsing error"]
+            "reasons": ["JSON parsing error"],
         }
-    
+
     # Shape normalization
     out: Dict[str, Any] = {
         "pass": bool(data.get("pass", False)),
@@ -52,11 +54,13 @@ def invoke_judge(llm: Any, prompt: str) -> Dict[str, Any]:
         "feedback": str(data.get("feedback", "")),
         "reasons": list(data.get("reasons", [])),
     }
-    
+
     return out
 
 
-def judge_reasoning_output(reasoning_output: Dict[str, Any], context: Dict[str, Any], llm: Any) -> Dict[str, Any]:
+def judge_reasoning_output(
+    reasoning_output: Dict[str, Any], context: Dict[str, Any], llm: Any
+) -> Dict[str, Any]:
     """Judge the quality of a reasoning step output."""
     rubric = (
         "- Reasoning text accurately identifies the problem from the observation.\n"
@@ -70,18 +74,22 @@ def judge_reasoning_output(reasoning_output: Dict[str, Any], context: Dict[str, 
         "- Reasoning is clear and follows logical problem-solving steps.\n"
         "- Addresses the specific scenario type (syntax, import, test, dependency, yaml, multi).\n"
     )
-    
+
     input_data = {
-        "scenario": context.get('scenario_name', 'Unknown'),
-        "observation": context.get('observation', 'No observation'),
-        "scenario_description": context.get('scenario_description', 'Unknown')
+        "scenario": context.get("scenario_name", "Unknown"),
+        "observation": context.get("observation", "No observation"),
+        "scenario_description": context.get("scenario_description", "Unknown"),
     }
-    
-    prompt = build_prompt("Reasoning Step Evaluation", rubric, input_data, reasoning_output)
+
+    prompt = build_prompt(
+        "Reasoning Step Evaluation", rubric, input_data, reasoning_output
+    )
     return invoke_judge(llm, prompt)
 
 
-def judge_action_output(action_output: Dict[str, Any], context: Dict[str, Any], llm: Any) -> Dict[str, Any]:
+def judge_action_output(
+    action_output: Dict[str, Any], context: Dict[str, Any], llm: Any
+) -> Dict[str, Any]:
     """Judge the quality of an action step output."""
     rubric = (
         "- Action executed successfully without errors (status: pass).\n"
@@ -95,18 +103,20 @@ def judge_action_output(action_output: Dict[str, Any], context: Dict[str, Any], 
         "- Action is efficient and targeted (not overly broad).\n"
         "- Proper use of available CI tools (run_ci_pipeline, fix_syntax_error, etc.).\n"
     )
-    
+
     input_data = {
-        "scenario": context.get('scenario_name', 'Unknown'),
-        "previous_reasoning": context.get('reasoning', 'No reasoning'),
-        "scenario_description": context.get('scenario_description', 'Unknown')
+        "scenario": context.get("scenario_name", "Unknown"),
+        "previous_reasoning": context.get("reasoning", "No reasoning"),
+        "scenario_description": context.get("scenario_description", "Unknown"),
     }
-    
+
     prompt = build_prompt("Action Step Evaluation", rubric, input_data, action_output)
     return invoke_judge(llm, prompt)
 
 
-def judge_observation_output(observation_output: Dict[str, Any], context: Dict[str, Any], llm: Any) -> Dict[str, Any]:
+def judge_observation_output(
+    observation_output: Dict[str, Any], context: Dict[str, Any], llm: Any
+) -> Dict[str, Any]:
     """Judge the quality of an observation step output."""
     rubric = (
         "- Observation accurately interprets the action results.\n"
@@ -120,14 +130,16 @@ def judge_observation_output(observation_output: Dict[str, Any], context: Dict[s
         "- Provides actionable insights for next steps if needed.\n"
         "- Demonstrates understanding of CI pipeline success/failure indicators.\n"
     )
-    
+
     input_data = {
-        "scenario": context.get('scenario_name', 'Unknown'),
-        "action_result": context.get('action_result', {}),
-        "scenario_description": context.get('scenario_description', 'Unknown')
+        "scenario": context.get("scenario_name", "Unknown"),
+        "action_result": context.get("action_result", {}),
+        "scenario_description": context.get("scenario_description", "Unknown"),
     }
-    
-    prompt = build_prompt("Observation Step Evaluation", rubric, input_data, observation_output)
+
+    prompt = build_prompt(
+        "Observation Step Evaluation", rubric, input_data, observation_output
+    )
     return invoke_judge(llm, prompt)
 
 
@@ -145,27 +157,27 @@ def judge_full_scenario(scenario_data: Dict[str, Any], llm: Any) -> Dict[str, An
         "- Overall approach was systematic and logical.\n"
         "- Agent handled any errors or setbacks appropriately.\n"
     )
-    
+
     input_data = {
-        "scenario_name": scenario_data.get('scenario_name', 'Unknown'),
-        "scenario_description": scenario_data.get('scenario_description', 'Unknown'),
-        "total_steps": len(scenario_data.get('steps', [])),
-        "final_result": scenario_data.get('final_result', 'unknown')
+        "scenario_name": scenario_data.get("scenario_name", "Unknown"),
+        "scenario_description": scenario_data.get("scenario_description", "Unknown"),
+        "total_steps": len(scenario_data.get("steps", [])),
+        "final_result": scenario_data.get("final_result", "unknown"),
     }
-    
+
     output_data = {
-        "steps": scenario_data.get('steps', []),
-        "final_result": scenario_data.get('final_result', 'unknown'),
-        "total_turns": scenario_data.get('total_turns', 0)
+        "steps": scenario_data.get("steps", []),
+        "final_result": scenario_data.get("final_result", "unknown"),
+        "total_turns": scenario_data.get("total_turns", 0),
     }
-    
+
     prompt = build_prompt("Full Scenario Evaluation", rubric, input_data, output_data)
     return invoke_judge(llm, prompt)
 
 
 __all__ = [
     "judge_reasoning_output",
-    "judge_action_output", 
+    "judge_action_output",
     "judge_observation_output",
     "judge_full_scenario",
 ]

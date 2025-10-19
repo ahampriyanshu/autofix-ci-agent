@@ -81,3 +81,7 @@ REMEMBER:
 - Handle E302 linting errors with fix_syntax_error:add_blank_lines
 - Output ONLY valid JSON
 - Continue until CI passes
+
+---
+
+Based on the current observation, provide your reasoning and next tool call in JSON format:

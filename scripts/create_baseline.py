@@ -1,15 +1,17 @@
 import shutil
 from pathlib import Path
 
+
 def create_baseline(baseline_dir="baseline"):
     baseline_path = Path(baseline_dir)
-    
+
     if baseline_path.exists():
         shutil.rmtree(baseline_path)
-    
+
     baseline_path.mkdir(parents=True)
-    
-    (baseline_path / "calculator.py").write_text('''def add(a, b):
+
+    (baseline_path / "calculator.py").write_text(
+        """def add(a, b):
     return a + b
 
 
@@ -25,12 +27,14 @@ def divide(a, b):
     if b == 0:
         raise ValueError("Cannot divide by zero")
     return a / b
-''')
-    
+"""
+    )
+
     tests_dir = baseline_path / "tests"
     tests_dir.mkdir()
-    
-    (tests_dir / "test_calculator.py").write_text('''from calculator import add, subtract, multiply, divide
+
+    (tests_dir / "test_calculator.py").write_text(
+        """from calculator import add, subtract, multiply, divide
 import pytest
 
 
@@ -57,14 +61,18 @@ def test_divide():
 def test_divide_by_zero():
     with pytest.raises(ValueError):
         divide(5, 0)
-''')
-    
-    (baseline_path / "requirements.txt").write_text('''pytest>=7.0.0
+"""
+    )
+
+    (baseline_path / "requirements.txt").write_text(
+        """pytest>=7.0.0
 flake8>=5.0.0
 pyyaml>=6.0
-''')
-    
-    (baseline_path / "ci_pipeline.py").write_text('''#!/usr/bin/env python3
+"""
+    )
+
+    (baseline_path / "ci_pipeline.py").write_text(
+        """#!/usr/bin/env python3
 
 import subprocess
 import sys
@@ -247,9 +255,11 @@ def main():
 
 if __name__ == "__main__":
     main()
-''')
-    
+"""
+    )
+
     return baseline_path
+
 
 if __name__ == "__main__":
     create_baseline()

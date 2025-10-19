@@ -3,10 +3,10 @@ def fix_syntax_error(params):
     try:
         file_path, line_num, fix_type = params.split(":")
         line_num = int(line_num)
-        
-        with open(file_path, 'r') as f:
+
+        with open(file_path, "r") as f:
             lines = f.readlines()
-            
+
         if fix_type == "add_colon":
             line = lines[line_num - 1].rstrip()
             # For function definitions, add colon after the closing parenthesis
@@ -18,12 +18,12 @@ def fix_syntax_error(params):
                 else:
                     func_part = line.strip()
                     comment_part = ""
-                
+
                 # Find parenthesis in function part only
                 paren_pos = func_part.rfind(")")
                 if paren_pos != -1:
                     # Add colon after parenthesis in function part
-                    fixed_func = func_part[:paren_pos + 1] + ":"
+                    fixed_func = func_part[: paren_pos + 1] + ":"
                     if comment_part:
                         line = fixed_func + "  " + comment_part
                     else:
@@ -37,7 +37,9 @@ def fix_syntax_error(params):
                     line = line + ":"
             lines[line_num - 1] = line + "\n"
         elif fix_type == "add_parenthesis":
-            lines[line_num - 1] = lines[line_num - 1].replace("print ", "print(").rstrip() + ")\n"
+            lines[line_num - 1] = (
+                lines[line_num - 1].replace("print ", "print(").rstrip() + ")\n"
+            )
         elif fix_type == "fix_indentation":
             lines[line_num - 1] = "    " + lines[line_num - 1].lstrip()
         elif fix_type == "add_blank_lines":
@@ -57,10 +59,14 @@ def fix_syntax_error(params):
             # Add back exactly 2 blank lines
             lines.insert(line_num - 1, "\n")
             lines.insert(line_num - 1, "\n")
-            
-        with open(file_path, 'w') as f:
+
+        with open(file_path, "w") as f:
             f.writelines(lines)
-            
+
         return {"action": "fix_syntax_error", "status": "pass"}
     except Exception as e:
-        return {"action": "fix_syntax_error", "status": "fail", "error": f"Error fixing syntax: {e}"}
+        return {
+            "action": "fix_syntax_error",
+            "status": "fail",
+            "error": f"Error fixing syntax: {e}",
+        }

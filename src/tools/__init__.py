@@ -16,8 +16,9 @@ known_actions = {
     "add_import": "Add missing import statement",
     "fix_test_assertion": "Fix wrong test assertion",
     "add_dependency": "Add package to requirements.txt",
-    "fix_yaml_syntax": "Fix YAML syntax errors"
+    "fix_yaml_syntax": "Fix YAML syntax errors",
 }
+
 
 def execute_action(action_name, params):
     """Execute a tool action"""
@@ -36,6 +37,11 @@ def execute_action(action_name, params):
     elif action_name == "fix_yaml_syntax":
         return fix_yaml_syntax(params)
     else:
-        return {"action": "unknown_action", "status": "fail", "error": f"Unknown action: {action_name}"}
+        return {
+            "action": "unknown_action",
+            "status": "fail",
+            "error": f"Unknown action: {action_name}",
+        }
+
 
 # All tool implementations are now in separate files
