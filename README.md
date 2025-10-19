@@ -16,7 +16,7 @@ To complete the system, you need to implement the following:
 
 #### 1. Core Agent Methods
 
-Implement two core methods in `src/ci_agent.py`:
+Implement two core methods in `src/agent.py`:
 
 - **reason()** - Analyzes current CI state and plans next action using LLM
 - **act()** - Executes tool calls with proper error handling
@@ -56,6 +56,11 @@ The agent must handle various CI failure types:
 
 - Missing import statements
 - NameError from undefined modules or functions
+
+#### 3. Linting Errors
+
+- PEP8 violations (E302: missing blank lines)
+- Code style issues
 
 ### Sample Cases
 
@@ -250,6 +255,7 @@ NameError: name 'math' is not defined (calculator.py, line 15)
 - **Error Detection**: Use the error type patterns to choose the right tool
   - `SyntaxError` → use `fix_syntax_error`
   - `NameError` → use `add_import`
+  - `E302 linting error` → use `fix_syntax_error` with `add_blank_lines`
 - **JSON Output**: Always output valid JSON with "reasoning" and "tool_call" fields
 - **Exact Paths**: Use exact file paths from error messages (don't modify them)
 - **Iteration Limit**: Maximum 10 iterations to prevent infinite loops

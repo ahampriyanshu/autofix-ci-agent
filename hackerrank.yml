@@ -7,7 +7,7 @@ configuration:
       - unit.xml
   ide_config:
     default_open_files:
-      - src/ci_agent.py
+      - src/agent.py
       - src/prompts/ci_agent_prompt.txt
     project_menu:
       install: bash scripts/install.sh

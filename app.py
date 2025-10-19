@@ -104,22 +104,18 @@ def main():
     
     # Create mapping of scenario files to display names
     scenario_display_names = {
-        "seed_01_syntax": "Syntax Error - Missing Colon",
-        "seed_02_import": "Import Error - Missing Module",
-        "seed_03_test": "Test Failure - Wrong Assertion",
-        "seed_04_dependency": "Missing Dependency - Numpy",
-        "seed_05_yaml": "YAML Config Error - Missing Colon",
-        "seed_06_multi": "Multi-Step Chain - Multiple Issues"
+        "seed_syntax": "Syntax Error - Missing Colon",
+        "seed_import": "Import Error - Missing Module",
+        "seed_lint": "Linting Error - PEP8 Violations",
+        "seed_multi": "Multiple Syntax Errors"
     }
     
     # Create mapping of scenario files to descriptions
     scenario_descriptions = {
-        "seed_01_syntax": "Tests the agent's ability to detect and fix Python syntax errors, specifically missing colons in function definitions.",
-        "seed_02_import": "Evaluates how the agent handles missing import statements when modules are used but not imported.",
-        "seed_03_test": "Checks if the agent can identify and correct failing test assertions with wrong expected values.",
-        "seed_04_dependency": "Tests the agent's capability to detect missing dependencies and add them to requirements.txt.",
-        "seed_05_yaml": "Assesses the agent's ability to fix YAML configuration syntax errors like missing colons.",
-        "seed_06_multi": "Comprehensive test with multiple related issues that need to be resolved in sequence."
+        "seed_syntax": "Tests the agent's ability to detect and fix Python syntax errors, specifically missing colons in function definitions.",
+        "seed_import": "Evaluates how the agent handles missing import statements when modules are used but not imported.",
+        "seed_lint": "Assesses the agent's capability to fix PEP8 linting errors such as missing blank lines (E302).",
+        "seed_multi": "Comprehensive test with multiple syntax errors in the same file that need to be resolved sequentially."
     }
     
     # Extract scenario names and create display options

@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.append('scripts')
 sys.path.append('.')
 
-from .ci_agent import ReActAgent
+from .agent import ReActAgent
 from .llm import get_llm
 from .react_runner import run_react_loop
 from src.tools import known_actions

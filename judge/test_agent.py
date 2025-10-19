@@ -5,7 +5,7 @@ import os
 import json
 import shutil
 from pathlib import Path
-from src.ci_agent import ReActAgent
+from src.agent import ReActAgent
 from src.llm import get_llm
 from src.tools import known_actions
 from src.react_runner import run_react_loop
@@ -25,8 +25,9 @@ class TestReActAgent:
         # Define expected efficiency thresholds for each scenario
         self.scenario_thresholds = {
             "seed_syntax": 5,      # Simple syntax fix: CI -> analyze -> fix -> CI (pass)
-            "seed_import": 8,      # Missing import: CI -> analyze -> add_import -> CI -> fix E302 -> CI
-            "seed_multi": 12       # Multiple syntax errors + linting: CI -> fix -> CI -> fix -> CI -> fix E302 -> CI
+            "seed_import": 5,      # Missing import: CI -> analyze -> add_import -> CI (pass)
+            "seed_lint": 5,        # Linting errors: CI -> analyze -> fix E302 -> CI (pass)
+            "seed_multi": 8        # Multiple syntax errors: CI -> fix -> CI -> fix -> CI (pass)
         }
     
     # Utility Functions
@@ -302,6 +303,88 @@ class TestReActAgent:
             pass
     
     
+    def test_linting_errors_fix(self):
+        """Test Case: Fix PEP8 linting errors - Complete validation"""
+        scenario_name = "seed_lint"
+        max_steps = self.scenario_thresholds[scenario_name]
+        
+        # Use orchestrator to create workspace
+        from src.orchestrator import create_error_workspace
+        workspace_result = create_error_workspace(scenario_name)
+        
+        assert workspace_result["status"] == "pass", f"Failed to create workspace: {workspace_result.get('error', 'Unknown error')}"
+        
+        workspace_path = workspace_result["data"]["workspace_path"]
+        error_info = workspace_result["data"]["error_info"]
+        scenario_description = error_info.get('description', 'Unknown error')
+        
+        print(f"\n=== Testing {scenario_name}: {scenario_description} ===")
+        
+        # Get initial CI status
+        ci_result = execute_tool_in_workspace(workspace_path, "run_ci_pipeline", "")
+        initial_observation = f"Initial CI status: {ci_result}"
+        
+        # Create context for LLM judge
+        judge_context = {
+            'scenario_name': scenario_name,
+            'scenario_description': scenario_description,
+            'observation': initial_observation
+        }
+        
+        # Test reason() method - JSON validation + LLM judge
+        reasoning = self.agent.reason(initial_observation)
+        self.validate_reason_output(reasoning)
+        print(f"✓ reason() returns valid JSON structure")
+        
+        reasoning_eval = self.judge_react_step('reason', reasoning, judge_context)
+        print(f"✓ reason() quality: {reasoning_eval['score']}/100 - {reasoning_eval['feedback'][:50]}...")
+        
+        # Test act() method - JSON validation + LLM judge
+        action_result = self.agent.act(reasoning)
+        self.validate_act_output(action_result)
+        print(f"✓ act() returns valid JSON structure")
+        
+        action_context = judge_context.copy()
+        action_context['reasoning'] = reasoning.get('reasoning', '')
+        action_eval = self.judge_react_step('act', action_result, action_context)
+        print(f"✓ act() quality: {action_eval['score']}/100 - {action_eval['feedback'][:50]}...")
+        
+        # Test observe() method - JSON validation + LLM judge
+        observation = self.agent.observe(action_result)
+        self.validate_observe_output(observation)
+        print(f"✓ observe() returns valid JSON structure")
+        
+        obs_context = judge_context.copy()
+        obs_context['action_result'] = action_result
+        obs_eval = self.judge_react_step('observe', observation, obs_context)
+        print(f"✓ observe() quality: {obs_eval['score']}/100 - {obs_eval['feedback'][:50]}...")
+        
+        # Test full scenario execution with LLM judge
+        judge_result = self.judge_scenario_execution(scenario_name, workspace_path, max_turns=max_steps)
+        scenario_data = judge_result['scenario_data']
+        full_evaluation = judge_result['judge_evaluation']
+        
+        # Validate success
+        assert scenario_data['final_result'] == "success", f"Agent should fix {scenario_description} but got '{scenario_data['final_result']}'"
+        print(f"✓ Agent successfully fixed the issue")
+        
+        # Validate LLM judge evaluation
+        self.assert_judge_quality(full_evaluation, min_score=50)
+        print(f"✓ Full scenario quality: {full_evaluation['score']}/100 - {full_evaluation['feedback'][:50]}...")
+        
+        # Efficiency check
+        assert scenario_data['total_turns'] <= max_steps, f"Agent took {scenario_data['total_turns']} turns, expected <= {max_steps}"
+        print(f"✓ Agent solved in {scenario_data['total_turns']}/{max_steps} steps")
+        
+        print(f"✓ SCENARIO COMPLETE: {scenario_name} - All validations passed")
+        
+        # Clean up this test's workspace
+        try:
+            if Path(workspace_path).exists():
+                shutil.rmtree(workspace_path)
+        except (FileNotFoundError, OSError):
+            pass
+    
     def test_missing_import_fix(self):
         """Test Case: Fix missing import - Complete validation"""
         scenario_name = "seed_import"
@@ -473,7 +556,7 @@ class TestReActAgent:
         try:
             result = self.agent.reason("Test observation: CI failed with syntax error")
         except NotImplementedError:
-            pytest.fail("User must implement reason() method in src/ci_agent.py")
+            pytest.fail("User must implement reason() method in src/agent.py")
     
     def test_act_method_implemented(self):
         """Test that act method is implemented (user must implement this)"""
@@ -481,5 +564,5 @@ class TestReActAgent:
         try:
             result = self.agent.act(test_reasoning)
         except NotImplementedError:
-            pytest.fail("User must implement act() method in src/ci_agent.py")
+            pytest.fail("User must implement act() method in src/agent.py")
     
