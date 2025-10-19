@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import json
 import hashlib
-from typing import Any, Optional, Dict, List
+from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -148,7 +148,7 @@ class CachedLLM:
 
 def get_llm() -> Any:
     """Get cached LLM instance compatible with existing code."""
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    model = "gpt-4o-mini"
     return CachedLLM(model=model)
 
 
