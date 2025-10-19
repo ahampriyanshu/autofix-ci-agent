@@ -1,79 +1,56 @@
-When CI pipelines fail due to syntax errors or missing dependencies, manual debugging takes valuable developer time. Build an intelligent agent that automatically detects, diagnoses, and resolves these issues to keep your pipeline running smoothly.
+All PRs in your team need to pass CI checks before merging. Developers often spend time fixing basic lint and syntax issues to get their PRs approved. This manual debugging is time-consuming and blocks productivity. You are given the task to automate this process by building an intelligent agent that automatically detects, diagnoses, and resolves these issues.
 
 ### Task
 
 Build an AI agent using the ReAct (Reason-Act-Observe) pattern that:
 
-- Uses **Reasoning** to analyze CI failures and plan fixes systematically.
-- Uses **Actions** to execute targeted fixes using specialized tools.
-- Uses **Observations** to interpret results and determine next steps.
-- Orchestrates multiple fix attempts until CI passes or max iterations reached.
-- Returns a structured JSON output.
+- Uses **Reasoning** to analyze CI failures and plan fixes
+- Uses **Actions** to execute targeted fixes using tools
+- Orchestrates multiple fix attempts until CI passes
+- Returns structured JSON output
 
 ### Requirements
 
-To complete the system, you need to implement the following:
+To complete this task, you need to implement:
 
 #### 1. Core Agent Methods
 
-Implement two core methods in `src/agent.py`:
+Implement two methods in `src/agent.py`:
 
 - **reason()** - Analyzes current CI state and plans next action using LLM
 - **act()** - Executes tool calls with proper error handling
 
-Note: The **observe()** method is already implemented for you.
+Note: The **observe()** method is already implemented.
 
-#### 2. Prompt File
+#### 2. Available Tools
 
-The prompt file that defines agent behavior is already provided with a systematic approach:
-
-- `src/prompts/ci_agent_prompt.txt`: Pre-written prompt with clear workflow and examples
-  - Defines a 5-step systematic approach
-  - Provides explicit error type detection rules
-  - Includes deterministic examples for each tool
-
-#### 3. Available Tools
-
-The agent has access to these tools in `src/tools/`:
+The agent has access to these tools:
 
 - **run_ci_pipeline** - Check CI status and identify failures
 - **analyze_file** - Read and analyze file content
 - **fix_syntax_error** - Fix Python syntax errors
 - **add_import** - Add missing import statements
 
-### Error Scenarios
+#### 3. Error Scenarios
 
-The agent must handle various CI failure types:
+Your agent must handle:
 
-#### 1. Syntax Errors
+**Syntax Errors:** Missing colons, incorrect indentation, invalid Python syntax
 
-- Missing colons in function definitions
-- Incorrect indentation
-- Unclosed brackets or quotes
-- Invalid Python syntax
+**Import Issues:** Missing import statements, NameError from undefined modules
 
-#### 2. Import Issues
-
-- Missing import statements
-- NameError from undefined modules or functions
-
-#### 3. Linting Errors
-
-- PEP8 violations (E302: missing blank lines)
-- Code style issues
+**Linting Errors:** PEP8 violations
 
 ### Sample Cases
 
 #### Case 1: Syntax Error Fix
 
-**Initial CI Failure:**
-
+**Initial State:**
 ```
 SyntaxError: invalid syntax (calculator.py, line 3)
 ```
 
-**Reasoning Step**
-
+**Reasoning:**
 ```json
 {
   "reasoning": "CI pipeline failed with syntax error in calculator.py line 3. Need to analyze the file to identify the specific syntax issue.",
@@ -84,8 +61,7 @@ SyntaxError: invalid syntax (calculator.py, line 3)
 }
 ```
 
-**Action Result**
-
+**Action Result:**
 ```json
 {
   "status": "success",
@@ -93,28 +69,25 @@ SyntaxError: invalid syntax (calculator.py, line 3)
   "result": {
     "status": "pass",
     "data": {
-      "content": "def add(a, b)\n    return a + b",
-      "errors": ["Missing colon after function definition on line 3"]
+      "content": "def add(a, b)\n    return a + b"
     }
   }
 }
 ```
 
-**Observation**
-
+**Observation:**
 ```json
 {
-  "observation": "Found missing colon in function definition on line 3. This is a syntax error that needs immediate fixing.",
+  "observation": "Found missing colon in function definition on line 3.",
   "ci_status": "fail",
   "next_action_needed": true
 }
 ```
 
-**Next Reasoning Step**
-
+**Next Reasoning:**
 ```json
 {
-  "reasoning": "Identified missing colon in function definition. Need to fix this syntax error using fix_syntax_error tool.",
+  "reasoning": "Identified missing colon in function definition. Fixing it now.",
   "tool_call": {
     "tool": "fix_syntax_error",
     "input": "calculator.py:3:add_colon"
@@ -122,37 +95,10 @@ SyntaxError: invalid syntax (calculator.py, line 3)
 }
 ```
 
-**Final Action Result**
-
+**Verification:**
 ```json
 {
-  "status": "success",
-  "action": "fix_syntax_error",
-  "result": {
-    "status": "pass",
-    "data": {
-      "fixed": true,
-      "content": "def add(a, b):\n    return a + b"
-    }
-  }
-}
-```
-
-**Final Observation**
-
-```json
-{
-  "observation": "Successfully fixed syntax error by adding missing colon. File now has correct Python syntax. Need to run CI pipeline to verify the fix.",
-  "ci_status": "unknown",
-  "next_action_needed": true
-}
-```
-
-**Verification Step**
-
-```json
-{
-  "reasoning": "Syntax error has been fixed. Now need to run CI pipeline to check if there are any remaining issues.",
+  "reasoning": "Syntax error fixed. Running CI to verify.",
   "tool_call": {
     "tool": "run_ci_pipeline",
     "input": ""
@@ -160,27 +106,10 @@ SyntaxError: invalid syntax (calculator.py, line 3)
 }
 ```
 
-**Final CI Result**
-
+**Final Result:**
 ```json
 {
-  "status": "success",
-  "action": "run_ci_pipeline",
-  "result": {
-    "status": "pass",
-    "data": {
-      "overall_status": "pass",
-      "message": "All tests passed successfully"
-    }
-  }
-}
-```
-
-**Completion Observation**
-
-```json
-{
-  "observation": "CI pipeline now passes successfully. All syntax errors have been resolved and tests are passing.",
+  "observation": "CI pipeline now passes successfully.",
   "ci_status": "pass",
   "next_action_needed": false
 }
@@ -188,17 +117,15 @@ SyntaxError: invalid syntax (calculator.py, line 3)
 
 #### Case 2: Missing Import
 
-**Initial CI Failure:**
-
+**Initial State:**
 ```
 NameError: name 'math' is not defined (calculator.py, line 15)
 ```
 
-**Reasoning Step**
-
+**Reasoning:**
 ```json
 {
-  "reasoning": "CI failing with NameError for math module. Need to add import statement.",
+  "reasoning": "CI failing with NameError for math module. Adding import statement.",
   "tool_call": {
     "tool": "add_import",
     "input": "calculator.py:import math"
@@ -206,37 +133,10 @@ NameError: name 'math' is not defined (calculator.py, line 15)
 }
 ```
 
-**Action Result**
-
+**Verification:**
 ```json
 {
-  "status": "success",
-  "action": "add_import",
-  "result": {
-    "status": "pass",
-    "data": {
-      "added": "import math",
-      "file": "calculator.py"
-    }
-  }
-}
-```
-
-**Observation**
-
-```json
-{
-  "observation": "Successfully added import math to calculator.py. Need to run CI pipeline to verify the fix.",
-  "ci_status": "unknown",
-  "next_action_needed": true
-}
-```
-
-**Verification Step**
-
-```json
-{
-  "reasoning": "Import added. Now need to run CI pipeline to check if the issue is resolved.",
+  "reasoning": "Import added. Verifying by running CI.",
   "tool_call": {
     "tool": "run_ci_pipeline",
     "input": ""
@@ -246,17 +146,22 @@ NameError: name 'math' is not defined (calculator.py, line 15)
 
 ### Best Practices
 
-- **Systematic Workflow**: Follow the 5-step approach defined in the prompt
-  1. Run CI pipeline to identify failures
-  2. Analyze files to understand errors
-  3. Apply appropriate fixes
-  4. Verify fixes by running CI again
-  5. Repeat until CI passes
-- **Error Detection**: Use the error type patterns to choose the right tool
-  - `SyntaxError` → use `fix_syntax_error`
-  - `NameError` → use `add_import`
-  - `E302 linting error` → use `fix_syntax_error` with `add_blank_lines`
-- **JSON Output**: Always output valid JSON with "reasoning" and "tool_call" fields
-- **Exact Paths**: Use exact file paths from error messages (don't modify them)
-- **Iteration Limit**: Maximum 10 iterations to prevent infinite loops
-- **Interactive Testing**: Use the Streamlit UI (`streamlit run app.py`) to test your agent
+**Systematic Workflow:** Follow the 5-step approach:
+1. Run CI pipeline to identify failures
+2. Analyze files to understand errors
+3. Apply appropriate fixes
+4. Verify fixes by running CI again
+5. Repeat until CI passes
+
+**Error Detection:** Use error patterns to choose the right tool:
+- `SyntaxError` → use `fix_syntax_error`
+- `NameError` → use `add_import`
+- `E302 linting error` → use `fix_syntax_error` with `add_blank_lines`
+
+**JSON Output:** Always output valid JSON with "reasoning" and "tool_call" fields
+
+**Exact Paths:** Use exact file paths from error messages (don't modify them)
+
+**Iteration Limit:** Maximum 10 iterations to prevent infinite loops
+
+**Interactive Testing:** Use the Streamlit UI (`streamlit run app.py`) to test your agent
